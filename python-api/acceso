@@ -1,0 +1,17 @@
+.\venv\Scripts\activate
+
+uvicorn main:app --reload
+
+http://localhost:8000/docs
+
+
+ejemplo:
+
+{
+  "id": 99,
+  "orderNumber": "123233",
+  "orderDate": "2025-05-12",
+  "finalPrice": 150.75,
+  "status": "Pending"
+}
+
