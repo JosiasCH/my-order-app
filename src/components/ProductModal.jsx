@@ -10,7 +10,7 @@ const ProductModal = ({ onClose, onSave, initialData }) => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:4000/api/products")
+      .get("https://ordenes-backend-production-3e1a.up.railway.app/api/products")
       .then((res) => setProductsList(res.data))
       .catch((err) => console.error("Error loading products:", err));
   }, []);

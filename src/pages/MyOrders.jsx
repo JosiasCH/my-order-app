@@ -9,21 +9,25 @@ const MyOrders = () => {
   useEffect(() => {
     const fetchOrdersWithProductCount = async () => {
       try {
-        const res = await axios.get("http://localhost:4000/api/orders");
+        const res = await axios.get("https://ordenes-backend-production-3e1a.up.railway.app/api/orders");
         const ordersData = res.data;
 
         const updatedOrders = await Promise.all(
           ordersData.map(async (order) => {
             try {
               const productRes = await axios.get(
-                `http://localhost:4000/api/order-products/${order.id}`
+                `https://ordenes-backend-production-3e1a.up.railway.app/api/order-products/${order.id}`
               );
+
+              // Sum total qty from order_products
+              const qtyTotal = productRes.data.reduce((sum, item) => sum + item.qty, 0);
+
               return {
                 ...order,
-                productCount: productRes.data.length,
+                productCount: qtyTotal,
               };
             } catch (err) {
-              console.error("Error fetching products for order", order.id);
+              console.error("Error fetching products for order", order.id, err);
               return {
                 ...order,
                 productCount: 0,
@@ -46,7 +50,7 @@ const MyOrders = () => {
     if (!confirmDelete) return;
 
     try {
-      await axios.delete(`http://localhost:4000/api/orders/${orderId}`);
+      await axios.delete(`https://ordenes-backend-production-3e1a.up.railway.app/api/orders/${orderId}`);
       setOrders((prev) => prev.filter((order) => order.id !== orderId));
       alert("Order deleted successfully.");
     } catch (err) {
@@ -60,7 +64,7 @@ const MyOrders = () => {
       const order = orders.find((o) => o.id === orderId);
       if (!order) return;
 
-      await axios.put(`http://localhost:4000/api/orders/${orderId}`, {
+      await axios.put(`https://ordenes-backend-production-3e1a.up.railway.app/api/orders/${orderId}`, {
         orderNumber: order.order_number,
         orderDate: order.order_date.slice(0, 10),
         finalPrice: parseFloat(order.final_price),

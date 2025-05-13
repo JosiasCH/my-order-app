@@ -9,7 +9,7 @@ const Products = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get("http://localhost:4000/api/products");
+      const res = await axios.get("https://ordenes-backend-production-3e1a.up.railway.app/api/products");
       setProducts(res.data);
     } catch (err) {
       console.error("Error loading products:", err);
@@ -30,10 +30,16 @@ const Products = () => {
 
     try {
       if (editingId) {
-        await axios.put(`http://localhost:4000/api/products/${editingId}`, payload);
+        await axios.put(
+          `https://ordenes-backend-production-3e1a.up.railway.app/api/products/${editingId}`,
+          payload
+        );
         alert("Product updated.");
       } else {
-        await axios.post("http://localhost:4000/api/products", payload);
+        await axios.post(
+          "https://ordenes-backend-production-3e1a.up.railway.app/api/products",
+          payload
+        );
         alert("Product added.");
       }
 
@@ -42,8 +48,8 @@ const Products = () => {
       setEditingId(null);
       fetchProducts();
     } catch (err) {
-      console.error("Error saving product:", err);
-      alert("Something went wrong.");
+      console.error("Error saving product:", err.response?.data || err.message);
+      alert("Something went wrong while saving the product.");
     }
   };
 
@@ -57,7 +63,7 @@ const Products = () => {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
     try {
-      await axios.delete(`http://localhost:4000/api/products/${id}`);
+      await axios.delete(`https://ordenes-backend-production-3e1a.up.railway.app/api/products/${id}`);
       fetchProducts();
     } catch (err) {
       console.error("Error deleting product:", err);

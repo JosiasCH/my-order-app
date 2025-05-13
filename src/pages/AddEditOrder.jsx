@@ -22,8 +22,7 @@ const AddEditOrder = () => {
     setOrderDate(today);
 
     if (isEdit) {
-      // Cargar productos
-      axios.get(`http://localhost:4000/api/order-products/${id}`)
+      axios.get(`https://ordenes-backend-production-3e1a.up.railway.app/api/products/${id}`)
         .then(res => {
           const formatted = res.data.map(p => ({
             id: p.product_id,
@@ -36,8 +35,7 @@ const AddEditOrder = () => {
         })
         .catch(err => console.error(err));
 
-      // Cargar info de la orden
-      axios.get(`http://localhost:4000/api/orders/${id}`)
+      axios.get(`https://ordenes-backend-production-3e1a.up.railway.app/api/products/${id}`)
         .then(res => {
           setOrderNumber(res.data.order_number);
           setOrderDate(res.data.order_date.slice(0, 10));
@@ -73,7 +71,7 @@ const AddEditOrder = () => {
 
     if (isEdit && toDelete?.dbId) {
       try {
-        await axios.delete(`http://localhost:4000/api/order-products/${toDelete.dbId}`);
+        await axios.delete(`https://ordenes-backend-production-3e1a.up.railway.app/api/products/${toDelete.dbId}`);
       } catch (err) {
         console.error("Failed to delete from backend:", err);
       }
@@ -107,15 +105,15 @@ const AddEditOrder = () => {
       let savedOrderId = id;
 
       if (isEdit) {
-        await axios.put(`http://localhost:4000/api/orders/${id}`, orderPayload);
+        await axios.put(`https://ordenes-backend-production-3e1a.up.railway.app/api/orders/${id}`, orderPayload);
       } else {
-        const res = await axios.post("http://localhost:4000/api/orders", orderPayload);
+        const res = await axios.post("https://ordenes-backend-production-3e1a.up.railway.app/api/orders", orderPayload);
         savedOrderId = res.data.id;
       }
 
       for (const p of products) {
         if (p.dbId) continue;
-        await axios.post("http://localhost:4000/api/order-products", {
+        await axios.post("https://ordenes-backend-production-3e1a.up.railway.app/api/order-products", {
           orderId: savedOrderId,
           productId: p.id,
           productName: p.name,
@@ -132,13 +130,12 @@ const AddEditOrder = () => {
     }
   };
 
-  // 🔒 Si la orden está completada, no se puede editar
   if (orderStatus === "Completed") {
     return (
       <div>
         <h1>Edit Order</h1>
         <p>This order is marked as <strong>Completed</strong> and cannot be modified.</p>
-        <button onClick={() => navigate("/my-orders")}>Back to Orders</button>
+        <button onClick={() => navigate("/my-orders")}>← Back to Orders</button>
       </div>
     );
   }
@@ -146,6 +143,11 @@ const AddEditOrder = () => {
   return (
     <div>
       <h1>{isEdit ? "Edit Order" : "Add Order"}</h1>
+
+      {/* Botón de volver */}
+      <button onClick={() => navigate("/my-orders")} style={{ marginBottom: "1rem" }}>
+        ← Back to Orders
+      </button>
 
       <form onSubmit={(e) => e.preventDefault()}>
         <label>
@@ -221,11 +223,7 @@ const AddEditOrder = () => {
         <ProductModal
           onClose={() => setShowModal(false)}
           onSave={handleSaveProduct}
-          initialData={
-            editingProductIndex !== null
-              ? products[editingProductIndex]
-              : null
-          }
+          initialData={editingProductIndex !== null ? products[editingProductIndex] : null}
         />
       )}
     </div>

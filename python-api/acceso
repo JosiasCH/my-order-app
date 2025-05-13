@@ -2,7 +2,7 @@
 
 uvicorn main:app --reload
 
-http://localhost:8000/docs
+https://ordenes-backend-production-3e1a.up.railway.applocalhost:8000/docs
 
 
 ejemplo:
