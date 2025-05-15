@@ -22,31 +22,35 @@ const AddEditOrder = () => {
     setOrderDate(today);
 
     if (isEdit) {
-      axios.get(`https://ordenes-backend-production-3e1a.up.railway.app/api/products/${id}`)
-        .then(res => {
-          const formatted = res.data.map(p => ({
+      // Cargar productos asociados a la orden
+      axios
+        .get(`https://ordenes-backend-production-3e1a.up.railway.app/api/order-products/${id}`)
+        .then((res) => {
+          const formatted = res.data.map((p) => ({
             id: p.product_id,
             name: p.product_name,
             unitPrice: parseFloat(p.unit_price),
             qty: p.qty,
-            dbId: p.id
+            dbId: p.id,
           }));
           setProducts(formatted);
         })
-        .catch(err => console.error(err));
+        .catch((err) => console.error("Error loading order products:", err));
 
-      axios.get(`https://ordenes-backend-production-3e1a.up.railway.app/api/products/${id}`)
-        .then(res => {
+      // Cargar datos de la orden
+      axios
+        .get(`https://ordenes-backend-production-3e1a.up.railway.app/api/orders/${id}`)
+        .then((res) => {
           setOrderNumber(res.data.order_number);
           setOrderDate(res.data.order_date.slice(0, 10));
           setOrderStatus(res.data.status || "Pending");
         })
-        .catch(err => console.error(err));
+        .catch((err) => console.error("Error loading order info:", err));
     }
   }, [id]);
 
   useEffect(() => {
-    const total = products.reduce((sum, p) => sum + (p.unitPrice * p.qty), 0);
+    const total = products.reduce((sum, p) => sum + p.unitPrice * p.qty, 0);
     setFinalPrice(total.toFixed(2));
   }, [products]);
 
@@ -71,7 +75,9 @@ const AddEditOrder = () => {
 
     if (isEdit && toDelete?.dbId) {
       try {
-        await axios.delete(`https://ordenes-backend-production-3e1a.up.railway.app/api/products/${toDelete.dbId}`);
+        await axios.delete(
+          `https://ordenes-backend-production-3e1a.up.railway.app/api/products/${toDelete.dbId}`
+        );
       } catch (err) {
         console.error("Failed to delete from backend:", err);
       }
@@ -90,7 +96,7 @@ const AddEditOrder = () => {
 
   const handleSaveOrder = async () => {
     try {
-      if (!orderNumber || products.length === 0) {
+      if (!orderNumber || (!isEdit && products.length === 0)) {
         alert("Please enter an order number and at least one product.");
         return;
       }
@@ -99,27 +105,36 @@ const AddEditOrder = () => {
         orderNumber,
         orderDate,
         finalPrice: parseFloat(finalPrice),
-        status: orderStatus
+        status: orderStatus,
       };
 
       let savedOrderId = id;
 
       if (isEdit) {
-        await axios.put(`https://ordenes-backend-production-3e1a.up.railway.app/api/orders/${id}`, orderPayload);
+        await axios.put(
+          `https://ordenes-backend-production-3e1a.up.railway.app/api/orders/${id}`,
+          orderPayload
+        );
       } else {
-        const res = await axios.post("https://ordenes-backend-production-3e1a.up.railway.app/api/orders", orderPayload);
+        const res = await axios.post(
+          "https://ordenes-backend-production-3e1a.up.railway.app/api/orders",
+          orderPayload
+        );
         savedOrderId = res.data.id;
       }
 
       for (const p of products) {
         if (p.dbId) continue;
-        await axios.post("https://ordenes-backend-production-3e1a.up.railway.app/api/order-products", {
-          orderId: savedOrderId,
-          productId: p.id,
-          productName: p.name,
-          unitPrice: p.unitPrice,
-          qty: p.qty
-        });
+        await axios.post(
+          "https://ordenes-backend-production-3e1a.up.railway.app/api/order-products",
+          {
+            orderId: savedOrderId,
+            productId: p.id,
+            productName: p.name,
+            unitPrice: p.unitPrice,
+            qty: p.qty,
+          }
+        );
       }
 
       alert("Order saved successfully!");
@@ -134,7 +149,9 @@ const AddEditOrder = () => {
     return (
       <div>
         <h1>Edit Order</h1>
-        <p>This order is marked as <strong>Completed</strong> and cannot be modified.</p>
+        <p>
+          This order is marked as <strong>Completed</strong> and cannot be modified.
+        </p>
         <button onClick={() => navigate("/my-orders")}>← Back to Orders</button>
       </div>
     );
@@ -144,7 +161,6 @@ const AddEditOrder = () => {
     <div>
       <h1>{isEdit ? "Edit Order" : "Add Order"}</h1>
 
-      {/* Botón de volver */}
       <button onClick={() => navigate("/my-orders")} style={{ marginBottom: "1rem" }}>
         ← Back to Orders
       </button>
