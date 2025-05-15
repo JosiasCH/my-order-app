@@ -6,27 +6,33 @@ import mysql.connector
 from decimal import Decimal
 from datetime import date
 
+# 👇 Activar Swagger en Railway
+app = FastAPI(
+    title="My Orders API",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json"
+)
 
-app = FastAPI()
-
-
+# CORS para conexión desde el frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=["*"],  # Reemplaza con tu dominio de Netlify en producción
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Configuración MySQL
+# Configuración de conexión a Railway (según tu screenshot)
 db_config = {
-    "host": "localhost",
+    "host": "mysql.railway.internal",
     "user": "root",
-    "password": "Josiitas123?",
-    "database": "my_orders",
+    "password": "HmmHfPjJgmAqiOrAzWeNoKhpLAZHeCF",
+    "database": "railway",
     "port": 3306
 }
 
+# Modelo de orden
 class Order(BaseModel):
     id: Optional[int] = None
     orderNumber: str
@@ -43,22 +49,18 @@ def get_orders():
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM orders")
         rows = cursor.fetchall()
-
-        orders = []
-        for row in rows:
-            orders.append({
+        return [
+            {
                 "id": row["id"],
                 "orderNumber": row["order_number"],
                 "orderDate": str(row["order_date"]) if isinstance(row["order_date"], date) else row["order_date"],
                 "finalPrice": float(row["final_price"]) if isinstance(row["final_price"], Decimal) else row["final_price"],
                 "status": row["status"]
-            })
-
-        return orders
-
+            }
+            for row in rows
+        ]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
     finally:
         if cursor:
             cursor.close()
@@ -77,8 +79,7 @@ def create_order(order: Order = Body(...)):
             (order.orderNumber, order.orderDate, order.finalPrice, order.status)
         )
         conn.commit()
-        new_id = cursor.lastrowid
-        return {**order.dict(), "id": new_id}
+        return {**order.dict(), "id": cursor.lastrowid}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
