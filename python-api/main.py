@@ -6,7 +6,7 @@ import mysql.connector
 from decimal import Decimal
 from datetime import date
 
-# 👇 Activar Swagger en Railway
+
 app = FastAPI(
     title="My Orders API",
     docs_url="/docs",
@@ -14,16 +14,16 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
-# CORS para conexión desde el frontend
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Reemplaza con tu dominio de Netlify en producción
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Configuración de conexión a Railway (según tu screenshot)
+
 db_config = {
     "host": "mysql.railway.internal",
     "user": "root",
@@ -32,7 +32,7 @@ db_config = {
     "port": 3306
 }
 
-# Modelo de orden
+
 class Order(BaseModel):
     id: Optional[int] = None
     orderNumber: str

@@ -11,6 +11,7 @@ const AddEditOrder = () => {
   const [orderNumber, setOrderNumber] = useState("");
   const [orderDate, setOrderDate] = useState("");
   const [products, setProducts] = useState([]);
+  const [deletedProducts, setDeletedProducts] = useState([]);
   const [finalPrice, setFinalPrice] = useState(0);
   const [orderStatus, setOrderStatus] = useState("Pending");
 
@@ -22,9 +23,10 @@ const AddEditOrder = () => {
     setOrderDate(today);
 
     if (isEdit) {
-      // Cargar productos asociados a la orden
       axios
-        .get(`https://ordenes-backend-production-3e1a.up.railway.app/api/order-products/${id}`)
+        .get(
+          `https://ordenes-backend-production-3e1a.up.railway.app/api/order-products/${id}`
+        )
         .then((res) => {
           const formatted = res.data.map((p) => ({
             id: p.product_id,
@@ -37,9 +39,10 @@ const AddEditOrder = () => {
         })
         .catch((err) => console.error("Error loading order products:", err));
 
-      // Cargar datos de la orden
       axios
-        .get(`https://ordenes-backend-production-3e1a.up.railway.app/api/orders/${id}`)
+        .get(
+          `https://ordenes-backend-production-3e1a.up.railway.app/api/orders/${id}`
+        )
         .then((res) => {
           setOrderNumber(res.data.order_number);
           setOrderDate(res.data.order_date.slice(0, 10));
@@ -64,35 +67,35 @@ const AddEditOrder = () => {
     setShowModal(true);
   };
 
-  const handleDeleteProduct = async (index) => {
-    const confirmDelete = confirm("Are you sure you want to remove this product?");
+  const handleDeleteProduct = (index) => {
+    const confirmDelete = confirm(
+      "Are you sure you want to remove this product?"
+    );
     if (!confirmDelete) return;
 
     const toDelete = products[index];
+    if (toDelete?.dbId) {
+      setDeletedProducts((prev) => [...prev, toDelete.dbId]);
+    }
+
     const updated = [...products];
     updated.splice(index, 1);
     setProducts(updated);
-
-    if (isEdit && toDelete?.dbId) {
-      try {
-        await axios.delete(
-          `https://ordenes-backend-production-3e1a.up.railway.app/api/products/${toDelete.dbId}`
-        );
-      } catch (err) {
-        console.error("Failed to delete from backend:", err);
-      }
-    }
   };
 
-  const handleSaveProduct = (product) => {
-    if (editingProductIndex !== null) {
-      const updated = [...products];
-      updated[editingProductIndex] = product;
-      setProducts(updated);
-    } else {
-      setProducts([...products, product]);
-    }
-  };
+const handleSaveProduct = (product) => {
+  if (editingProductIndex !== null) {
+    const updated = [...products];
+    const original = updated[editingProductIndex];
+    updated[editingProductIndex] = {
+      ...product,
+      dbId: original.dbId, 
+    };
+    setProducts(updated);
+  } else {
+    setProducts([...products, product]);
+  }
+};
 
   const handleSaveOrder = async () => {
     try {
@@ -123,18 +126,32 @@ const AddEditOrder = () => {
         savedOrderId = res.data.id;
       }
 
-      for (const p of products) {
-        if (p.dbId) continue;
-        await axios.post(
-          "https://ordenes-backend-production-3e1a.up.railway.app/api/order-products",
-          {
-            orderId: savedOrderId,
-            productId: p.id,
-            productName: p.name,
-            unitPrice: p.unitPrice,
-            qty: p.qty,
-          }
+      for (const deletedId of deletedProducts) {
+        await axios.delete(
+          `https://ordenes-backend-production-3e1a.up.railway.app/api/order-products/${deletedId}`
         );
+      }
+
+      for (const p of products) {
+        const payload = {
+          orderId: savedOrderId,
+          productId: p.id,
+          productName: p.name,
+          unitPrice: p.unitPrice,
+          qty: p.qty,
+        };
+
+        if (p.dbId) {
+          await axios.put(
+            `https://ordenes-backend-production-3e1a.up.railway.app/api/order-products/${p.dbId}`,
+            payload
+          );
+        } else {
+          await axios.post(
+            "https://ordenes-backend-production-3e1a.up.railway.app/api/order-products",
+            payload
+          );
+        }
       }
 
       alert("Order saved successfully!");
@@ -150,7 +167,8 @@ const AddEditOrder = () => {
       <div>
         <h1>Edit Order</h1>
         <p>
-          This order is marked as <strong>Completed</strong> and cannot be modified.
+          This order is marked as <strong>Completed</strong> and cannot be
+          modified.
         </p>
         <button onClick={() => navigate("/my-orders")}>← Back to Orders</button>
       </div>
@@ -161,7 +179,10 @@ const AddEditOrder = () => {
     <div>
       <h1>{isEdit ? "Edit Order" : "Add Order"}</h1>
 
-      <button onClick={() => navigate("/my-orders")} style={{ marginBottom: "1rem" }}>
+      <button
+        onClick={() => navigate("/my-orders")}
+        style={{ marginBottom: "1rem" }}
+      >
         ← Back to Orders
       </button>
 
@@ -224,7 +245,9 @@ const AddEditOrder = () => {
                 <td>{(p.unitPrice * p.qty).toFixed(2)}</td>
                 <td>
                   <button onClick={() => handleEditProduct(index)}>Edit</button>
-                  <button onClick={() => handleDeleteProduct(index)}>Delete</button>
+                  <button onClick={() => handleDeleteProduct(index)}>
+                    Delete
+                  </button>
                 </td>
               </tr>
             ))}
@@ -239,7 +262,9 @@ const AddEditOrder = () => {
         <ProductModal
           onClose={() => setShowModal(false)}
           onSave={handleSaveProduct}
-          initialData={editingProductIndex !== null ? products[editingProductIndex] : null}
+          initialData={
+            editingProductIndex !== null ? products[editingProductIndex] : null
+          }
         />
       )}
     </div>
